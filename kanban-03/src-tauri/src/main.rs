@@ -110,19 +110,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // このmain関数はasync fnではないので、asyncな関数を呼ぶのにblock_on関数を使う
     use tauri::async_runtime::block_on;
 
-    // データベースのファイルパスやURL等
-    const DATABASE_DIR: &str = "kanban-db";
+    // データベースのファイルパス等を設定する
+    const DATABASE_DIR: &str = "gihyo-kanban-db";
     const DATABASE_FILE: &str = "db.sqlite";
-    let database_dir = std::path::Path::new(DATABASE_DIR);
+    // ユーザのホームディレクトリ直下にデータベースのディレクトリを作成する
+    // もし、各OSで標準的に使用されるアプリ専用のデータディレクトリに保存したいなら
+    // directoriesクレートの`ProjectDirs::data_dir`メソッドなどを使うとよい
+    // https://docs.rs/directories/latest/directories/struct.ProjectDirs.html#method.data_dir
+    let home_dir = directories::UserDirs::new()
+        .map(|dirs| dirs.home_dir().to_path_buf())
+        // ホームディレクトリが取得できないときはカレントディレクトリを使う
+        .unwrap_or_else(|| std::env::current_dir().expect("Cannot access the current directory"));
+    let database_dir = home_dir.join(DATABASE_DIR);
     let database_file = database_dir.join(DATABASE_FILE);
-    let database_url = format!("sqlite://{}/{}", DATABASE_DIR, DATABASE_FILE);
 
     // データベースファイルが存在するかチェックする
-    let db_exists = std::fs::metadata(database_file).is_ok();
+    let db_exists = std::fs::metadata(&database_file).is_ok();
     // 存在しないなら、ファイルを格納するためのディレクトリを作成する
     if !db_exists {
-        std::fs::create_dir(database_dir)?;
+        std::fs::create_dir(&database_dir)?;
     }
+
+    // データベースURLを作成する
+    let database_dir_str = std::fs::canonicalize(&database_dir)
+        .unwrap()
+        .to_string_lossy()
+        .replace('\\', "/");
+    let database_url = format!("sqlite://{}/{}", database_dir_str, DATABASE_FILE);
 
     // SQLiteのコネクションプールを作成する
     let sqlite_pool = block_on(database::create_sqlite_pool(&database_url))?;

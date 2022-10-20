@@ -1,3 +1,6 @@
-# gihyo-tauri-kanban
+# Tauriかんばんボード サンプルプログラム
+## ライセンス
 
-Tauriでつくるかんばんボード &mdash; gihyo.jp Rust Monthly Topics
+本リポジトリのコンテンツは、MITライセンスのもとで公開されています。
+
+- https://github.com/tatsuya6502/gihyo-tauri-kanban/blob/main/LICENSE

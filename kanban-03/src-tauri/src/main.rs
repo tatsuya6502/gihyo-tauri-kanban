@@ -132,7 +132,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // データベースURLを作成する
-    let database_dir_str = std::fs::canonicalize(&database_dir)
+    //
+    // 2022年12月28日 修正
+    //     Windows環境でも動作するよう、std::fs::canonicalizeを、dunce::canonicalizeに変更
+    //
+    //     stdのcanonicalizeは、Windows環境ではUNCパス（例：\\?\C:\Users\..）を返すが、
+    //     それを元にURLを作成するとSQLiteが受け付けないものになってしまう。dunceの
+    //     canonicalizeは普通のパス（例：C:\Users\）を返すので、それを使えばWindowsでも動く。
+    //
+    //     詳細: https://github.com/tatsuya6502/gihyo-tauri-kanban/pull/1
+    let database_dir_str = dunce::canonicalize(&database_dir)
         .unwrap()
         .to_string_lossy()
         .replace('\\', "/");
